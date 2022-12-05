@@ -4,6 +4,8 @@ import { check, validationResult } from 'express-validator';
 import cors from "cors";
 import User from "./models/User";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import config from "config";
 
 
 const app = express();
@@ -47,7 +49,7 @@ app.post(
         } else {
         const { name, email, password } = req.body;
         try {
-            // Check if user exists
+          // Check if user exists
             let user = await User.findOne({ email: email });
             if (user) {
             return res
@@ -68,8 +70,23 @@ app.post(
 
             // Save to the db and return
             await user.save();
-            res.send('User successfully register');
-            } catch (error) {
+            // Generate and return a JWT token
+            const payload = {
+                user: {
+                    id: user.id,
+                },
+            };
+
+            jwt.sign(
+                payload,
+                config.get("jwtSecret"),
+                { expiresIn: "10hr" },
+                (err, token) => {
+                    if (err) throw err;
+                    res.json({ token: token });
+                }
+            );
+        } catch (error) {
             res.status(500).send("Server error");
             }
         }

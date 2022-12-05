@@ -1,3 +1,4 @@
 {
-    "mongoURI": "mongodb+srv://christcb:MATC2022!@cluster0.vtv30eu.mongodb.net/?retryWrites=true&w=majority"
+    "mongoURI": "mongodb+srv://christcb:MATC2022!@cluster0.vtv30eu.mongodb.net/?retryWrites=true&w=majority",
+    "jwtSecret": "1959LesPaul"
 }
