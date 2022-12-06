@@ -195,7 +195,7 @@ app.post(
                 const user = await User.findById(req.user.id);
 
                 // Create a new post
-                const post = new Post({
+                const post = new Guitar({
                     user: user.id,
                     model: model,
                     brand: brand,

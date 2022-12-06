@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const GuitarSchema = new mongoose.Schema({
+const PostSchema = new mongoose.Schema({
     user: {
         type: 'ObjectId',
         ref: 'User'
@@ -27,6 +27,6 @@ const GuitarSchema = new mongoose.Schema({
     }
 });
 
-const Guitar = mongoose.model('guitar', GuitarSchema);
+const Guitar = mongoose.model('guitar', PostSchema);
 
 export default Guitar; 
