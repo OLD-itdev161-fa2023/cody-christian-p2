@@ -4,35 +4,40 @@ import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
+import Post from "./components/Post/Post";
+import PostList from "./components/PostList/PostList";
+import CreatePost from "./components/Post/CreatePost";
+import EditPost from "./components/Post/EditPost";
+
 
 class App extends React.Component {
   state = {
     posts: [],
+    post: null,
     token: null,
     user: null,
   };
 
-
   loadData = () => {
     const { token } = this.state;
 
-    if(token) {
+    if (token) {
       const config = {
         headers: {
-          'x-auth-token': token
+          "x-auth-token": token,
         }
       };
-    
-    axios
-      .get("http://localhost:5000", config)
-      .then(response => {
-        this.setState({
-          guitars: response.data,
+
+      axios
+        .get("http://localhost:5000/api/posts", config)
+        .then((response) => {
+          this.setState({
+            posts: response.data,
+          });
+        })
+        .catch((error) => {
+          console.error(`Error fetching data: ${error}`);
         });
-      })
-      .catch((error) => {
-        console.error(`Error fetching data: ${error}`);
-      });
     }
   };
   componentDidMount() {
@@ -57,9 +62,10 @@ class App extends React.Component {
         .get("http://localhost:5000/api/auth", config)
         .then((response) => {
           localStorage.setItem("user", response.data.name);
-          this.setState({ 
+          this.setState(
+            {
               user: response.data.name,
-              token: token
+              token: token,
             },
             () => {
               this.loadData();
@@ -80,8 +86,65 @@ class App extends React.Component {
     this.setState({ user: null, token: null });
   };
 
+  viewPost = (post) => {
+    console.log(`view ${post.model}`);
+    this.setState({
+      post: post,
+    });
+  };
+
+  deletePost = (post) => {
+    const { token } = this.state;
+
+    if (token) {
+      const config = {
+        headers: {
+          "x-auth-token": token,
+        },
+      };
+
+      axios
+        .delete(`http://localhost:5000/api/posts/${post._id}`, config)
+        .then((response) => {
+          const newPosts = this.state.posts.filter((p) => p._id !== post._id);
+          this.setState({
+            posts: [...newPosts],
+          });
+        })
+        .catch((error) => {
+          console.error(`Error deleting post: ${error}`);
+        });
+    }
+  };
+
+  editPost = post => {
+    this.setState({
+      post:post
+    });
+  };
+
+  onPostCreated = post => {
+    const newPosts = [...this.state.posts, post];
+
+    this.setState({
+      posts: newPosts
+    });
+  };
+
+  onPostUpdated = post => {
+    console.log('updated post: ', post);
+    const newPosts = [...this.state.posts];
+    const index = newPosts.findIndex(p => p._id === post._id);
+
+    newPosts[index] = post;
+
+    this.setState({
+      posts: newPosts
+    });
+  };
+
   render() {
-    let { user, posts } = this.state;
+    let { user, posts, post, token } = this.state;
     const authProps = {
       authenticateUser: this.authenticateUser,
     };
@@ -90,13 +153,17 @@ class App extends React.Component {
       <Router>
         <div className="App">
           <header className="App-header">
-            <h1>GoodThings</h1>
+            <h1>Guitar Collection</h1>
             <ul>
               <li>
                 <Link to="/">Home</Link>
               </li>
               <li>
-                <Link to="/register">Register</Link>
+                {user ? (
+                  <Link to="/new-post">New Post</Link>
+                ) : (
+                  <Link to="/register">Register</Link>
+                )}
               </li>
               <li>
                 {user ? (
@@ -110,26 +177,36 @@ class App extends React.Component {
             </ul>
           </header>
           <main>
-            <Route exact path="/">
-              {user ? (
-                <React.Fragment>
-                  <div>Hello {user}!</div>
-                  <div>
-                    {posts.map(guitar => (
-                      <div key={guitar._id}>
-                        <h1>{guitar.model}</h1>
-                        <h2>{guitar.brand}</h2>
-                        <h2>{guitar.finish}</h2>
-                        <p>{guitar.notes}</p>
-                      </div>
-                    ))}
-                  </div>
-                </React.Fragment>
-              ) : (
-                <React.Fragment>Please Register or Login</React.Fragment>
-              )}
-            </Route>
             <Switch>
+              <Route exact path="/">
+                {user ? (
+                  <React.Fragment>
+                    <div>Hello {user}!</div>
+                    <PostList
+                      posts={posts}
+                      clickPost={this.viewPost}
+                      deletePost={this.deletePost}
+                      editPost={this.editPost}
+                    />
+                  </React.Fragment>
+                ) : (
+                  <React.Fragment>Please Register or Login</React.Fragment>
+                )}
+              </Route>
+              <Route path="/posts/:postId">
+                <Post post={post} />
+              </Route>
+              <Route path="/new-post">
+                <CreatePost token={token} onPostCreated={this.onPostCreated} />
+              </Route>
+              <Route path="/edit-post/:postId">
+                <EditPost
+                  token={token}
+                  post={post}
+                  onPostUpdated={this.onPostUpdated}
+                />
+              </Route>
+
               <Route
                 exact
                 path="/register"
